@@ -56,6 +56,23 @@
         .file-link { color: #4ec9b0; text-decoration: underline; cursor: pointer; transition: color 0.2s; }
         .file-link:hover { color: #ffffff; }
 
+        /* 多文件标签页 */
+        .file-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+        .file-tab { padding: 6px 16px; border: 1px solid #ccc; border-radius: 6px 6px 0 0; cursor: pointer; background: #e8e8e8; font-size: 13px; transition: background 0.15s; }
+        .file-tab:hover { background: #d0d0d0; }
+        .file-tab.active { background: #4f46e5; color: white; border-color: #4f46e5; font-weight: 500; }
+        .file-tab .badge { background: #ff9800; color: white; font-size: 10px; padding: 1px 5px; border-radius: 10px; margin-left: 4px; }
+        .file-tab.active .badge { background: #ffc107; color: #333; }
+
+        /* 项目结构页面 */
+        .project-structure { display: none; }
+        .project-structure h2 { color: #2c3e50; margin-bottom: 15px; }
+        .tree-view { background: #fafafa; border: 1px solid #ddd; border-radius: 8px; padding: 20px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; line-height: 1.8; white-space: pre; overflow-x: auto; max-height: 70vh; overflow-y: auto; }
+        .tree-dir { color: #1565c0; font-weight: 600; }
+        .tree-py { color: #2e7d32; }
+        .tree-data { color: #e65100; }
+        .tree-comment { color: #999; font-style: italic; }
+
         /* 响应式调整 */
         @media (max-width: 768px) {
             body { flex-direction: column; }
@@ -83,7 +100,7 @@
 <div class="main">
     <!-- 运行说明（始终显示） -->
     <div class="run-guide">
-        💡 <strong>使用提示：</strong> 在项目根目录运行 <code>python -m http.server 8000</code>，然后访问 <a href="http://localhost:8000/index.html">http://localhost:8000/index.html</a>
+        💡 <strong>源代码地址：</strong> <a href="https://github.com/wm2242/python_tk_work" target="_blank">https://github.com/wm2242/python_tk_work</a>
     </div>
 
     <div class="title" id="problemTitle">请从左侧选择题目</div>
@@ -91,7 +108,8 @@
     <div class="notice" id="notice"></div>
 
     <div class="code-box">
-        <h3>📝 代码（可编辑）</h3>
+        <h3>📝 代码（可编辑）<span id="multiFileHint" style="display:none; font-weight:400; font-size:0.85em; color:#888;"> — 点击标签切换文件</span></h3>
+        <div class="file-tabs" id="fileTabs" style="display:none;"></div>
         <textarea id="codeEditor" placeholder="加载中..."></textarea>
     </div>
 
@@ -120,6 +138,18 @@
     <div class="output-box" id="filePreviewBox" style="display:none;">
         <h3>📄 文件内容预览：<span id="previewFileName"></span></h3>
         <pre id="fileContent"></pre>
+    </div>
+
+    <!-- 项目结构总览页面 -->
+    <div class="project-structure" id="projectStructure">
+        <h2>📂 Python 项目结构总览</h2>
+        <p style="color:#666;margin-bottom:15px;">以下展示所有题目的 Python 文件及数据文件的目录结构。（文件名带 <span style="color:#e65100;">橙色</span> 的为数据文件，带 <span style="color:#2e7d32;">绿色</span> 的为 Python 源文件）</p>
+        <div class="tree-view" id="treeView"></div>
+    </div>
+
+    <!-- 页脚 -->
+    <div style="margin-top:30px; padding-top:15px; border-top:1px solid #e0e0e0; text-align:center; color:#888; font-size:13px;">
+        🙏 感谢 <a href="https://www.cloudflare.com/" target="_blank" style="color:#f6821f;">Cloudflare</a> 为本站提供 CDN 加速与安全防护支持。
     </div>
 </div>
 
@@ -174,10 +204,10 @@
         { id: 38, name: "第38题", codeUrl: "34-44/38.py", desc: "从键盘输入一些字符，逐个把它们写到磁盘文件上，直到输入一个 # 为止。", needInput: true, gui: false },
         { id: 39, name: "第39题", codeUrl: "34-44/39.py", desc: "从键盘输入一个字符串，将小写字母全部转换成大写字母，然后输出到一个磁盘文件\"test\"中保存。", needInput: true, gui: false },
         { id: 40, name: "第40题", codeUrl: "34-44/40/40.py", desc: "有两个磁盘文件A和B,各存放一行字母,要求把这两个文件中的信息合并(按字母顺序排列), 输出到一个新文件C中。", needInput: false, gui: false, dataFiles: ["34-44/40/A.txt", "34-44/40/B.txt"], cwd: "34-44/40" },
-        { id: 41, name: "第41题", codeUrl: "34-44/41.py", desc: "设计一标签文本在窗体内自由移动（tkinter）", needInput: false, gui: true },
-        { id: 42, name: "第42题", codeUrl: "34-44/42.py", desc: "设计无标题栏窗体在屏上移动，并显示当前系统时间（每隔1秒变化一次）（tkinter）", needInput: false, gui: true },
-        { id: 43, name: "第43题", codeUrl: "34-44/43.py", desc: "设计窗体，窗体内各对象能进行四则运算（tkinter）", needInput: false, gui: true },
-        { id: 44, name: "第44题", codeUrl: "34-44/44/dml.py", desc: "应用数据库sqlite3库，完成数据库表结构定义，能完成记录增加，查询，更新，删除", needInput: false, gui: false },
+        { id: 41, name: "第41题", codeUrl: "34-44/41.py", desc: "设计一标签文本在窗体内自由移动（tkinter）", needInput: false, gui: true, tkinterNote: "本题使用 tkinter 图形界面库，无法在浏览器中运行。请在本地安装 Python 后，在命令行执行：python 34-44/41.py" },
+        { id: 42, name: "第42题", codeUrl: "34-44/42.py", desc: "设计无标题栏窗体在屏上移动，并显示当前系统时间（每隔1秒变化一次）（tkinter）", needInput: false, gui: true, tkinterNote: "本题使用 tkinter 图形界面库，无法在浏览器中运行。请在本地安装 Python 后，在命令行执行：python 34-44/42.py" },
+        { id: 43, name: "第43题", codeUrl: "34-44/43.py", desc: "设计窗体，窗体内各对象能进行四则运算（tkinter）", needInput: false, gui: true, tkinterNote: "本题使用 tkinter 图形界面库，无法在浏览器中运行。请在本地安装 Python 后，在命令行执行：python 34-44/43.py" },
+        { id: 44, name: "第44题", codeUrl: "34-44/44/dml.py", desc: "应用数据库sqlite3库，完成数据库表结构定义，能完成记录增加，查询，更新，删除。本题包含两个 Python 文件：createdata.py（建库建表）、dml.py（GUI 增删查改界面）", needInput: false, gui: true, tkinterNote: "本题使用 tkinter + sqlite3，包含两个 Python 文件。无法在浏览器中运行。请在本地安装 Python 后，先运行 python 34-44/44/createdata.py 创建数据库，再运行 python 34-44/44/dml.py 启动 GUI 界面。", extraFiles: ["34-44/44/createdata.py"] },
     ];
 
     let pyodideReady = false;
@@ -293,9 +323,15 @@
     }
 
     async function autoLoadFiles(problem) {
-        if (!problem.dataFiles) return [];
+        const allFiles = [];
+        if (problem.dataFiles) allFiles.push(...problem.dataFiles);
+        // 多文件题目：将额外的 py 文件也加载到虚拟文件系统
+        if (problem.extraFiles) allFiles.push(...problem.extraFiles);
+
+        if (allFiles.length === 0) return [];
+
         const failed = [];
-        for (const filePath of problem.dataFiles) {
+        for (const filePath of allFiles) {
             // 先检查虚拟文件系统中是否已存在（使用绝对路径，避免 CWD 污染）
             const absPath = normalizePath(filePath);
             try { window.pyodide.FS.stat(absPath); continue; } catch (e) {}
@@ -494,33 +530,86 @@ json.dumps(lines)
         });
     }
 
+    // 存储多文件内容
+    let multiFileContents = {};      // { filePath: content }
+    let multiFileOriginals = {};     // { filePath: content } 原始内容
+
     async function loadProblem(problem) {
         currentProblem = problem;
+        multiFileContents = {};
+        multiFileOriginals = {};
         document.getElementById('problemTitle').textContent = `第 ${problem.id} 题 （${problem.codeUrl}）`;
         document.getElementById('problemDesc').textContent = problem.desc || '';
         document.getElementById('output').textContent = '点击运行查看结果';
         document.getElementById('stdin').value = '';
 
+        // 隐藏项目结构视图，恢复正常内容
+        document.getElementById('projectStructure').style.display = 'none';
+        document.querySelector('.code-box').style.display = '';
+        document.querySelector('.input-box').style.display = '';
+        document.querySelector('.button-group').style.display = '';
+        document.querySelectorAll('.output-box').forEach(el => el.style.display = '');
+
         const notice = document.getElementById('notice');
         const runBtn = document.getElementById('runBtn');
+        const fileTabs = document.getElementById('fileTabs');
+        const multiFileHint = document.getElementById('multiFileHint');
+
+        // 收集所有需要展示的文件路径
+        const allFiles = [problem.codeUrl];
+        if (problem.extraFiles && problem.extraFiles.length > 0) {
+            allFiles.push(...problem.extraFiles);
+        }
+
+        // 判断是否为多文件题目
+        const isMultiFile = allFiles.length > 1;
 
         if (problem.gui) {
             notice.style.display = 'block';
-            notice.textContent = '⚠️ 本题使用 tkinter 图形界面，无法在浏览器中运行，仅展示代码。';
+            if (problem.tkinterNote) {
+                notice.innerHTML = `⚠️ <strong>tkinter 图形界面程序</strong> — ${problem.tkinterNote.replace(/python /g, '<code>python </code>')}`;
+            } else {
+                notice.textContent = '⚠️ 本题使用 tkinter 图形界面，无法在浏览器中运行，仅展示代码。';
+            }
             runBtn.disabled = true;
         } else {
             notice.style.display = 'none';
             runBtn.disabled = false;
         }
 
+        // 构建文件标签页
+        fileTabs.innerHTML = '';
+        if (isMultiFile) {
+            fileTabs.style.display = 'flex';
+            multiFileHint.style.display = 'inline';
+            allFiles.forEach((filePath, idx) => {
+                const tab = document.createElement('span');
+                tab.className = 'file-tab';
+                tab.textContent = filePath.split('/').pop();
+                tab.setAttribute('data-file', filePath);
+                tab.addEventListener('click', () => switchFileTab(filePath));
+                if (idx === 0) tab.classList.add('active');
+                fileTabs.appendChild(tab);
+            });
+        } else {
+            fileTabs.style.display = 'none';
+            multiFileHint.style.display = 'none';
+        }
+
+        // 加载所有文件
         try {
-            // 添加时间戳参数避免浏览器缓存旧版本的 Python 文件
-            const fetchUrl = problem.codeUrl + '?t=' + Date.now();
-            const resp = await fetch(fetchUrl);
-            if (!resp.ok) throw new Error('文件未找到');
-            const code = await resp.text();
-            originalCode = code;
-            document.getElementById('codeEditor').value = code;
+            const timestamp = Date.now();
+            for (const filePath of allFiles) {
+                const fetchUrl = filePath + '?t=' + timestamp;
+                const resp = await fetch(fetchUrl);
+                if (!resp.ok) throw new Error(`${filePath} 未找到`);
+                const content = await resp.text();
+                multiFileContents[filePath] = content;
+                multiFileOriginals[filePath] = content;
+            }
+            // 默认显示主文件（第一个）
+            originalCode = multiFileOriginals[problem.codeUrl];
+            document.getElementById('codeEditor').value = multiFileContents[problem.codeUrl];
         } catch (e) {
             document.getElementById('codeEditor').value = `# 无法加载文件: ${e.message}`;
             originalCode = '';
@@ -529,6 +618,41 @@ json.dumps(lines)
         document.getElementById('filePreviewBox').style.display = 'none';
         document.getElementById('fileTree').textContent = '点击上方"查看所有文件/文件夹"按钮显示';
     }
+
+    function switchFileTab(filePath) {
+        // 保存当前编辑器内容到旧活跃文件
+        const oldActive = document.querySelector('.file-tab.active');
+        if (oldActive) {
+            const oldFile = oldActive.getAttribute('data-file');
+            if (oldFile && oldFile !== filePath) {
+                multiFileContents[oldFile] = document.getElementById('codeEditor').value;
+            }
+        }
+        // 更新标签页激活状态
+        document.querySelectorAll('.file-tab').forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.getAttribute('data-file') === filePath) tab.classList.add('active');
+        });
+        // 切换到新文件内容
+        if (multiFileContents[filePath] !== undefined) {
+            document.getElementById('codeEditor').value = multiFileContents[filePath];
+            originalCode = multiFileOriginals[filePath] || multiFileContents[filePath];
+        }
+    }
+
+    // 监听编辑器变化，实时保存到当前活跃文件
+    (function setupEditorAutoSave() {
+        const codeEditor = document.getElementById('codeEditor');
+        codeEditor.addEventListener('input', () => {
+            const activeTab = document.querySelector('.file-tab.active');
+            if (activeTab) {
+                const filePath = activeTab.getAttribute('data-file');
+                if (filePath) {
+                    multiFileContents[filePath] = codeEditor.value;
+                }
+            }
+        });
+    })();
 
     function buildSidebar() {
         const list = document.getElementById('problemList');
@@ -543,11 +667,165 @@ json.dumps(lines)
             });
             list.appendChild(li);
         });
+
+        // 添加项目结构总览链接
+        const structLi = document.createElement('li');
+        structLi.textContent = '📂 项目结构总览';
+        structLi.style.borderTop = '1px solid #4a5c6e';
+        structLi.style.marginTop = '10px';
+        structLi.style.paddingTop = '15px';
+        structLi.title = '查看所有 Python 项目文件结构';
+        structLi.addEventListener('click', () => {
+            document.querySelectorAll('.sidebar li').forEach(el => el.classList.remove('active'));
+            structLi.classList.add('active');
+            showProjectStructure();
+        });
+        list.appendChild(structLi);
+    }
+
+    function showProjectStructure() {
+        currentProblem = null;
+        document.getElementById('problemTitle').textContent = 'Python 项目结构总览';
+        document.getElementById('problemDesc').textContent = '以下是 44 道 Python 题目的完整项目文件结构，按目录分组展示。';
+        document.getElementById('notice').style.display = 'none';
+        document.getElementById('runBtn').disabled = true;
+        document.getElementById('fileTabs').style.display = 'none';
+        document.getElementById('multiFileHint').style.display = 'none';
+        document.getElementById('codeEditor').value = '# 请从左侧选择具体题目查看代码';
+        document.getElementById('stdin').value = '';
+        document.getElementById('output').textContent = '项目结构已显示在下方 ↓';
+        document.getElementById('filePreviewBox').style.display = 'none';
+        document.getElementById('fileTree').textContent = '点击上方"查看所有文件/文件夹"浏览虚拟文件系统';
+
+        // 隐藏常规区域：代码编辑、输入、输出、文件预览区
+        document.querySelector('.code-box').style.display = 'none';
+        document.querySelector('.input-box').style.display = 'none';
+        document.querySelector('.button-group').style.display = 'none';
+        document.querySelectorAll('.output-box').forEach(el => el.style.display = 'none');
+
+        // 构建并显示项目结构树
+        document.getElementById('treeView').innerHTML = buildProjectTree();
+        document.getElementById('projectStructure').style.display = 'block';
+    }
+
+    function buildProjectTree() {
+        // 手动构建项目结构树（基于 problems 配置和已知文件）
+        const dirs = {
+            '1-10/': { files: [], desc: '第1-10题：基础编程题' },
+            '11-22/': { files: [], desc: '第11-22题：经典算法题' },
+            '23-33/': { files: [], desc: '第23-33题：OS模块与文件操作' },
+            '34-44/': { files: [], desc: '第34-44题：综合题（含 tkinter 和 sqlite3）' },
+            '34-44/40/': { files: [], desc: '第40题：文件合并（含数据文件）' },
+            '34-44/44/': { files: [], desc: '第44题：数据库 CRUD 操作（tkinter GUI）' },
+        };
+
+        // 从 problems 配置中收集所有文件
+        problems.forEach(p => {
+            const parts = p.codeUrl.split('/');
+            // 确定文件所属目录
+            let dir;
+            if (p.codeUrl.includes('34-44/40/')) {
+                dir = '34-44/40/';
+            } else if (p.codeUrl.includes('34-44/44/')) {
+                dir = '34-44/44/';
+            } else if (p.codeUrl.startsWith('34-44/')) {
+                dir = '34-44/';
+            } else if (p.codeUrl.startsWith('23-33/')) {
+                dir = '23-33/';
+            } else if (p.codeUrl.startsWith('11-22/')) {
+                dir = '11-22/';
+            } else if (p.codeUrl.startsWith('1-10/')) {
+                dir = '1-10/';
+            }
+            if (dir && dirs[dir]) {
+                const fileName = parts[parts.length - 1];
+                const guiTag = p.gui ? ' <span class="tree-comment">← tkinter GUI（需本地运行）</span>' : '';
+                const multiTag = p.extraFiles ? ` <span class="tree-comment">← 含 ${p.extraFiles.length + 1} 个 py 文件</span>` : '';
+                dirs[dir].files.push({ name: fileName, gui: p.gui, extra: p.extraFiles, multiTag: multiTag, guiTag: guiTag, id: p.id });
+            }
+            // 添加 extraFiles
+            if (p.extraFiles) {
+                p.extraFiles.forEach(ef => {
+                    const efParts = ef.split('/');
+                    const efDir = efParts.slice(0, -1).join('/') + '/';
+                    const efName = efParts[efParts.length - 1];
+                    if (dirs[efDir]) {
+                        dirs[efDir].files.push({ name: efName, gui: false, extra: null, multiTag: '', guiTag: ' <span class="tree-comment">← 辅助模块</span>', id: p.id });
+                    }
+                });
+            }
+            // 添加 dataFiles
+            if (p.dataFiles) {
+                p.dataFiles.forEach(df => {
+                    const dfParts = df.split('/');
+                    const dfDir = dfParts.slice(0, -1).join('/') + '/';
+                    const dfName = dfParts[dfParts.length - 1];
+                    if (!dirs[dfDir]) {
+                        dirs[dfDir] = { files: [], desc: '' };
+                    }
+                    dirs[dfDir].files.push({ name: dfName, isData: true, id: p.id });
+                });
+            }
+        });
+
+        // 构建树状文本
+        let tree = '';
+        const sortedDirs = Object.keys(dirs).sort((a, b) => {
+            // 按目录层级和名称排序
+            const aDepth = a.split('/').filter(Boolean).length;
+            const bDepth = b.split('/').filter(Boolean).length;
+            if (aDepth !== bDepth) return aDepth - bDepth;
+            return a.localeCompare(b);
+        });
+
+        tree += '<span class="tree-dir">pytk/</span>  <span class="tree-comment">← 项目根目录（44道Python作业题）</span>\n';
+
+        sortedDirs.forEach(dir => {
+            const depth = dir.split('/').filter(Boolean).length;
+            const indent = '  '.repeat(depth);
+            const dirName = dir.split('/').filter(Boolean).pop() || dir;
+            const desc = dirs[dir].desc ? `  <span class="tree-comment">← ${dirs[dir].desc}</span>` : '';
+
+            // 如果子目录，显示父目录关系
+            if (depth > 1) {
+                tree += `${indent}<span class="tree-dir">├── ${dirName}/</span>${desc}\n`;
+            } else {
+                tree += `${indent}<span class="tree-dir">├── ${dirName}</span>${desc}\n`;
+            }
+
+            // 排序文件
+            const sortedFiles = dirs[dir].files.sort((a, b) => a.name.localeCompare(b.name));
+            sortedFiles.forEach((f, idx) => {
+                const fileIndent = '  '.repeat(depth + 1);
+                const prefix = idx === sortedFiles.length - 1 ? '└── ' : '├── ';
+                if (f.isData) {
+                    tree += `${fileIndent}${prefix}<span class="tree-data">${f.name}</span>  <span class="tree-comment">← 数据文件（第${f.id}题）</span>\n`;
+                } else {
+                    tree += `${fileIndent}${prefix}<span class="tree-py">${f.name}</span>  <span class="tree-comment">← 第${f.id}题</span>${f.guiTag}${f.multiTag}\n`;
+                }
+            });
+        });
+
+        // 添加根目录文件
+        tree += '  <span class="tree-dir">pyodide/</span>  <span class="tree-comment">← Pyodide Python 运行时（约12MB）</span>\n';
+        tree += '  <span class="tree-data">index.html</span>  <span class="tree-comment">← 本页面</span>\n';
+
+        return tree;
     }
 
     document.getElementById('runBtn').addEventListener('click', runCode);
     document.getElementById('resetBtn').addEventListener('click', () => {
-        if (originalCode) document.getElementById('codeEditor').value = originalCode;
+        const activeTab = document.querySelector('.file-tab.active');
+        if (activeTab) {
+            const filePath = activeTab.getAttribute('data-file');
+            if (filePath && multiFileOriginals[filePath]) {
+                multiFileContents[filePath] = multiFileOriginals[filePath];
+                document.getElementById('codeEditor').value = multiFileOriginals[filePath];
+                originalCode = multiFileOriginals[filePath];
+            }
+        } else if (originalCode) {
+            document.getElementById('codeEditor').value = originalCode;
+        }
     });
     document.getElementById('listFilesBtn').addEventListener('click', listFiles);
 
