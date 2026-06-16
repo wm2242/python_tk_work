@@ -12,7 +12,7 @@ def main():
                 name = parts[1] + parts[0]
                 dir_path = f"23/{name}"
                 if not os.path.exists(dir_path):
-                    os.mkdir(dir_path)
+                    os.makedirs(dir_path, exist_ok=True)
                     print(f"已创建: {name}")
                 else:
                     print(f"目录已存在，跳过: {name}")

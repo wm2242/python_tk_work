@@ -195,12 +195,19 @@
         statusEl.textContent = 'Python 环境已就绪 ✓';
     }
 
+    // 将路径规范化为绝对路径（确保不受 Python os.chdir 影响的 CWD 干扰）
+    function normalizePath(filePath) {
+        return filePath.startsWith('/') ? filePath : '/' + filePath;
+    }
+
     async function writeFileToFS(filePath, content) {
-        const parts = filePath.split('/');
-        // 逐级创建目录（比 mkdirTree 更可靠）
+        // 始终使用绝对路径，避免受 Python os.chdir 修改 CWD 的影响
+        const absPath = normalizePath(filePath);
+        const parts = absPath.split('/');  // 首元素为空字符串（因为路径以 / 开头）
+        // 逐级创建目录
         let current = '';
-        for (let i = 0; i < parts.length - 1; i++) {
-            current += (current ? '/' : '') + parts[i];
+        for (let i = 1; i < parts.length - 1; i++) {
+            current += '/' + parts[i];
             try {
                 window.pyodide.FS.mkdir(current);
             } catch (e) {
@@ -211,15 +218,15 @@
             }
         }
         // 验证父目录确实存在
-        if (parts.length > 1) {
+        if (parts.length > 2) {
             const parent = parts.slice(0, -1).join('/');
             try { window.pyodide.FS.stat(parent); } catch (e) {
                 console.error(`[数据加载]   ✗ 父目录不存在: ${parent}`);
                 throw new Error(`无法创建父目录: ${parent}`);
             }
         }
-        window.pyodide.FS.writeFile(filePath, content);
-        virtualFSFiles[filePath] = content;
+        window.pyodide.FS.writeFile(absPath, content);
+        virtualFSFiles[absPath] = content;
     }
 
     // 从服务器加载文件到 Pyodide 虚拟文件系统（尝试多个候选 URL，兼容不同部署环境）
@@ -289,8 +296,9 @@
         if (!problem.dataFiles) return [];
         const failed = [];
         for (const filePath of problem.dataFiles) {
-            // 先检查虚拟文件系统中是否已存在
-            try { window.pyodide.FS.stat(filePath); continue; } catch (e) {}
+            // 先检查虚拟文件系统中是否已存在（使用绝对路径，避免 CWD 污染）
+            const absPath = normalizePath(filePath);
+            try { window.pyodide.FS.stat(absPath); continue; } catch (e) {}
             const ok = await tryLoadFileToFS(filePath);
             if (!ok) failed.push(filePath);
         }
@@ -397,6 +405,17 @@
         // 如果题目指定了工作目录，在 Python 代码前插入 os.chdir
         let codeToRun = code;
         if (currentProblem && currentProblem.cwd) {
+            // 确保 cwd 目录存在（即使数据文件尚未加载），避免 os.chdir 失败
+            const cwdParts = currentProblem.cwd.split('/');
+            let cwdPath = '';
+            for (const part of cwdParts) {
+                cwdPath += (cwdPath ? '/' : '') + part;
+                try {
+                    window.pyodide.FS.mkdir('/' + cwdPath);
+                } catch (e) {
+                    // 目录已存在是正常情况，忽略
+                }
+            }
             codeToRun = `import os\nos.chdir('/${currentProblem.cwd}')\n` + codeToRun;
             console.log(`[运行] 在代码前注入 os.chdir('/${currentProblem.cwd}')`);
         }
@@ -416,6 +435,9 @@
             outputEl.textContent = outputText || '(程序运行完毕，无输出)';
         } catch (err) {
             outputEl.textContent = `错误：${err.message}`;
+        } finally {
+            // 运行后重置 CWD 为根目录，避免污染后续 FS 操作
+            try { pyodide.runPython('import os; os.chdir("/")'); } catch (e) {}
         }
     }
 
@@ -423,6 +445,7 @@
         await initPyodide();
         const raw = pyodide.runPython(`
 import os, json
+os.chdir('/')
 lines = []
 for root, dirs, files in os.walk('.'):
     level = root.replace('.', '').count(os.sep)
@@ -445,7 +468,10 @@ json.dumps(lines)
                 span.className = 'file-link';
                 span.setAttribute('data-file-path', item.path);
                 span.addEventListener('click', async (e) => {
-                    const fullPath = e.target.getAttribute('data-file-path');
+                    const rawPath = e.target.getAttribute('data-file-path');
+                    // 规范化路径：Python os.walk 可能返回 ./xx/yy 或 xx/yy，统一转为绝对路径
+                    const fullPath = rawPath.startsWith('./') ? '/' + rawPath.substring(2) :
+                                     rawPath.startsWith('/') ? rawPath : '/' + rawPath;
                     if (virtualFSFiles[fullPath]) {
                         document.getElementById('previewFileName').textContent = fullPath;
                         document.getElementById('fileContent').textContent = virtualFSFiles[fullPath];
@@ -488,7 +514,9 @@ json.dumps(lines)
         }
 
         try {
-            const resp = await fetch(problem.codeUrl);
+            // 添加时间戳参数避免浏览器缓存旧版本的 Python 文件
+            const fetchUrl = problem.codeUrl + '?t=' + Date.now();
+            const resp = await fetch(fetchUrl);
             if (!resp.ok) throw new Error('文件未找到');
             const code = await resp.text();
             originalCode = code;
