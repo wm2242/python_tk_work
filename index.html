@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python 作业展示（42题）</title>
+    <title>Python 作业展示（44题）</title>
     <script src="./pyodide/pyodide.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -67,7 +67,7 @@
 <body>
 
 <div class="sidebar">
-    <h2>📚 题目列表 (42题)</h2>
+    <h2>📚 题目列表 (44题)</h2>
     <ul id="problemList"></ul>
 
     <div class="upload-area">
@@ -157,7 +157,7 @@
         { id: 20, name: "第20题", codeUrl: "11-22/20.py", desc: "打印一个倒立等腰三角形\n*******\n *****\n  ***\n   *", needInput: false, gui: false },
         { id: 21, name: "第21题", codeUrl: "11-22/21.py", desc: "打印一个菱形\n   *\n  ***\n *****\n*******\n *****\n  ***\n   *", needInput: false, gui: false },
         { id: 22, name: "第22题", codeUrl: "11-22/22.py", desc: "打印平行四边形如下图所示：\n   ********\n    ********\n     ********\n      ********\n       ********", needInput: false, gui: false },
-        { id: 23, name: "第23题", codeUrl: "23-33/23.py", desc: "应用OS模块创建10个学生账号（假定用序列给10个学生的学号）", needInput: false, gui: false, dataFiles: ["23-33/23/students.txt"] },
+        { id: 23, name: "第23题", codeUrl: "23-33/23.py", desc: "应用OS模块创建10个学生账号（假定用序列给10个学生的学号）", needInput: false, gui: false, dataFiles: ["23-33/students.txt"], cwd: "23-33" },
         { id: 24, name: "第24题", codeUrl: "23-33/24.py", desc: "创建一个文本文件，写入\"Python程序设计基础\"", needInput: false, gui: false },
         { id: 25, name: "第25题", codeUrl: "23-33/25.py", desc: "打印出100以内质数（素数）", needInput: false, gui: false },
         { id: 26, name: "第26题", codeUrl: "23-33/26.py", desc: "海滩上有一堆桃子，五只猴子来分。第一只猴子把这堆桃子平均分为五份，多了一个，这只猴子就把多的一个扔掉了，拿走了一份。第二只猴子发现了一堆桃子，就也按照同样的方法分配了，很fortunately，她拿走了一份，第三、四、五只猴子都是按照这种方法分配的。问这堆桃子最少有多少个？", needInput: false, gui: false },
@@ -173,7 +173,7 @@
         { id: 37, name: "第37题", codeUrl: "34-44/37.py", desc: "809*??=800*??+9*?? 其中??代表的两位数, 809*??为四位数，8*??的结果为两位数，9*??的结果为3位数。求??代表的两位数，用程序作出来。", needInput: false, gui: false },
         { id: 38, name: "第38题", codeUrl: "34-44/38.py", desc: "从键盘输入一些字符，逐个把它们写到磁盘文件上，直到输入一个 # 为止。", needInput: true, gui: false },
         { id: 39, name: "第39题", codeUrl: "34-44/39.py", desc: "从键盘输入一个字符串，将小写字母全部转换成大写字母，然后输出到一个磁盘文件\"test\"中保存。", needInput: true, gui: false },
-        { id: 40, name: "第40题", codeUrl: "34-44/40/40.py", desc: "有两个磁盘文件A和B,各存放一行字母,要求把这两个文件中的信息合并(按字母顺序排列), 输出到一个新文件C中。", needInput: false, gui: false, dataFiles: ["34-44/40/A.txt", "34-44/40/B.txt"] },
+        { id: 40, name: "第40题", codeUrl: "34-44/40/40.py", desc: "有两个磁盘文件A和B,各存放一行字母,要求把这两个文件中的信息合并(按字母顺序排列), 输出到一个新文件C中。", needInput: false, gui: false, dataFiles: ["34-44/40/A.txt", "34-44/40/B.txt"], cwd: "34-44/40" },
         { id: 41, name: "第41题", codeUrl: "34-44/41.py", desc: "设计一标签文本在窗体内自由移动（tkinter）", needInput: false, gui: true },
         { id: 42, name: "第42题", codeUrl: "34-44/42.py", desc: "设计无标题栏窗体在屏上移动，并显示当前系统时间（每隔1秒变化一次）（tkinter）", needInput: false, gui: true },
         { id: 43, name: "第43题", codeUrl: "34-44/43.py", desc: "设计窗体，窗体内各对象能进行四则运算（tkinter）", needInput: false, gui: true },
@@ -197,28 +197,104 @@
 
     async function writeFileToFS(filePath, content) {
         const parts = filePath.split('/');
-        if (parts.length > 1) {
-            const dir = parts.slice(0, -1).join('/');
-            try { pyodide.FS.mkdirTree(dir); } catch (e) {}
+        // 逐级创建目录（比 mkdirTree 更可靠）
+        let current = '';
+        for (let i = 0; i < parts.length - 1; i++) {
+            current += (current ? '/' : '') + parts[i];
+            try {
+                window.pyodide.FS.mkdir(current);
+            } catch (e) {
+                // 目录已存在是正常情况，其他错误记录下来
+                if (!e.message.includes('exists')) {
+                    console.warn(`[数据加载]   mkdir 警告 (${current}): ${e.message}`);
+                }
+            }
         }
-        pyodide.FS.writeFile(filePath, content);
+        // 验证父目录确实存在
+        if (parts.length > 1) {
+            const parent = parts.slice(0, -1).join('/');
+            try { window.pyodide.FS.stat(parent); } catch (e) {
+                console.error(`[数据加载]   ✗ 父目录不存在: ${parent}`);
+                throw new Error(`无法创建父目录: ${parent}`);
+            }
+        }
+        window.pyodide.FS.writeFile(filePath, content);
         virtualFSFiles[filePath] = content;
     }
 
-    async function autoLoadFiles(problem) {
-        if (!problem.dataFiles) return;
-        for (const filePath of problem.dataFiles) {
+    // 从服务器加载文件到 Pyodide 虚拟文件系统（尝试多个候选 URL，兼容不同部署环境）
+    async function tryLoadFileToFS(filePath) {
+        const currentPagePath = window.location.pathname;
+        const baseDir = currentPagePath.substring(0, currentPagePath.lastIndexOf('/') + 1);
+        const baseURL = window.location.origin + baseDir;
+
+        // 构建候选 URL 列表
+        const pathSegments = filePath.split('/');
+        const candidates = [filePath, './' + filePath, '/' + filePath, baseURL + filePath];
+
+        // 向上遍历目录层级：尝试去掉前导路径（兼容子目录部署或直接访问）
+        for (let i = 1; i < pathSegments.length; i++) {
+            const partial = pathSegments.slice(i).join('/');
+            candidates.push(partial);
+            candidates.push('./' + partial);
+            candidates.push('/' + partial);
+            candidates.push(baseURL + partial);
+        }
+
+        const unique = [...new Set(candidates)];
+        console.log(`[数据加载] "${filePath}" — 尝试 ${unique.length} 个候选URL`);
+
+        // 阶段1: 从服务器获取文件内容
+        let content = null;
+        let successUrl = null;
+        for (const url of unique) {
             try {
-                const resp = await fetch(filePath);
-                if (resp.ok) {
-                    const content = await resp.text();
-                    await writeFileToFS(filePath, content);
-                    console.log(`自动加载成功: ${filePath}`);
+                const resp = await fetch(url);
+                if (resp && resp.ok) {
+                    content = await resp.text();
+                    successUrl = url;
+                    break;
+                } else if (resp) {
+                    console.log(`[数据加载]   ${url} → HTTP ${resp.status}`);
                 }
             } catch (e) {
-                console.warn(`自动加载失败，可稍后手动上传: ${filePath}`);
+                console.log(`[数据加载]   ${url} → 错误: ${e.message}`);
             }
         }
+
+        if (content === null) {
+            console.error(`[数据加载] ✗ 获取失败: ${filePath}（所有 ${unique.length} 个URL均失败，请检查服务器是否在项目根目录运行）`);
+            return false;
+        }
+        console.log(`[数据加载] ✓ 获取成功 (${successUrl}), ${content.length} 字符`);
+
+        // 阶段2: 写入 Pyodide 虚拟文件系统
+        if (!window.pyodide || !window.pyodide.FS) {
+            console.error(`[数据加载] ✗ Pyodide 未就绪，无法写入虚拟文件系统`);
+            return false;
+        }
+
+        try {
+            await writeFileToFS(filePath, content);
+            console.log(`[数据加载]   已写入 FS: ${filePath}`);
+        } catch (e) {
+            console.error(`[数据加载] ✗ FS 写入失败 (${filePath}): ${e.message}`);
+            return false;
+        }
+
+        return true;
+    }
+
+    async function autoLoadFiles(problem) {
+        if (!problem.dataFiles) return [];
+        const failed = [];
+        for (const filePath of problem.dataFiles) {
+            // 先检查虚拟文件系统中是否已存在
+            try { window.pyodide.FS.stat(filePath); continue; } catch (e) {}
+            const ok = await tryLoadFileToFS(filePath);
+            if (!ok) failed.push(filePath);
+        }
+        return failed;
     }
 
     document.getElementById('uploadBtn').addEventListener('click', async () => {
@@ -236,7 +312,7 @@
         for (const file of files) {
             let virtualPath = file.webkitRelativePath || file.name;
             if (!virtualPath.includes('/')) {
-                if (file.name === 'students.txt') virtualPath = '23-33/23/' + file.name;
+                if (file.name === 'students.txt') virtualPath = '23-33/' + file.name;
                 else if (file.name === 'A.txt' || file.name === 'B.txt') virtualPath = '34-44/40/' + file.name;
                 else virtualPath = file.name;
             }
@@ -277,47 +353,11 @@
         const failedFiles = [];
         
         for (const fp of files) {
-            let success = false;
-            console.log(`\n尝试加载: ${fp}`);
-            
-            // 获取当前页面的基础 URL
-            const currentPagePath = window.location.pathname;
-            const baseDir = currentPagePath.substring(0, currentPagePath.lastIndexOf('/') + 1);
-            const baseURL = window.location.origin + baseDir;
-            
-            const candidates = [
-                fp,                              // 直接相对路径
-                './' + fp,                       // 带./的相对路径
-                '/' + fp,                        // 根目录
-                baseURL + fp,                    // 基于当前目录的完整URL
-            ];
-            
-            console.log(`候选URL列表:`, candidates);
-            
-            for (const url of candidates) {
-                try {
-                    console.log(`  -> 尝试: ${url}`);
-                    const resp = await fetch(url);
-                    if (resp && resp.ok) {
-                        const content = await resp.text();
-                        await writeFileToFS(fp, content);
-                        console.log(`✓ 加载成功! (${url})`);
-                        console.log(`  内容长度: ${content.length} 字符`);
-                        success = true;
-                        break;
-                    } else {
-                        console.log(`  <- 响应状态: ${resp.status}`);
-                    }
-                } catch (e) {
-                    console.log(`  <- 错误: ${e.message}`);
-                }
-            }
-            
-            if (success) {
+            const ok = await tryLoadFileToFS(fp);
+            if (ok) {
                 loadedCount++;
             } else {
                 failedFiles.push(fp);
-                console.warn(`✗ 所有尝试都失败了: ${fp}`);
             }
         }
         
@@ -345,44 +385,21 @@
         await initPyodide();
 
         if (currentProblem) {
-            await autoLoadFiles(currentProblem);
-            if (currentProblem.dataFiles) {
-                const missing = [];
-                for (const fp of currentProblem.dataFiles) {
-                    try { pyodide.FS.stat(fp); } catch (e) { missing.push(fp); }
-                }
-                if (missing.length > 0) {
-                    const stillMissing = [];
-                    for (const fp of missing) {
-                        let loaded = false;
-                        const currentPagePath = window.location.pathname;
-                        const baseDir = currentPagePath.substring(0, currentPagePath.lastIndexOf('/') + 1);
-                        const baseURL = window.location.origin + baseDir;
-                        
-                        const candidates = [fp, './' + fp, '/' + fp, baseURL + fp];
-                        for (const url of candidates) {
-                            try {
-                                const resp = await fetch(url);
-                                if (resp && resp.ok) {
-                                    const content = await resp.text();
-                                    await writeFileToFS(fp, content);
-                                    console.log('自动从', url, '加载到 FS:', fp);
-                                    loaded = true;
-                                    break;
-                                }
-                            } catch (e) { }
-                        }
-                        if (!loaded) stillMissing.push(fp);
-                    }
-                    if (stillMissing.length > 0) {
-                        outputEl.textContent = `缺少数据文件:\n${stillMissing.join('\n')}\n已尝试自动加载失败。请通过左侧"上传数据文件"手动加载，或通过 HTTP 服务器访问本页面。`;
-                        return;
-                    }
-                }
+            const failed = await autoLoadFiles(currentProblem);
+            if (failed && failed.length > 0) {
+                outputEl.textContent = `⚠️ 数据文件加载失败:\n${failed.join('\n')}\n\n请确保通过 HTTP 服务器访问本页面（在项目根目录运行: python -m http.server 8000），或使用左侧"上传数据文件"手动加载。`;
+                return;
             }
         }
 
         outputEl.textContent = '运行中...';
+
+        // 如果题目指定了工作目录，在 Python 代码前插入 os.chdir
+        let codeToRun = code;
+        if (currentProblem && currentProblem.cwd) {
+            codeToRun = `import os\nos.chdir('/${currentProblem.cwd}')\n` + codeToRun;
+            console.log(`[运行] 在代码前注入 os.chdir('/${currentProblem.cwd}')`);
+        }
 
         let outputText = '';
         pyodide.setStdout({ batched: (text) => { outputText += text + '\n'; } });
@@ -395,7 +412,7 @@
         });
 
         try {
-            await pyodide.runPythonAsync(code);
+            await pyodide.runPythonAsync(codeToRun);
             outputEl.textContent = outputText || '(程序运行完毕，无输出)';
         } catch (err) {
             outputEl.textContent = `错误：${err.message}`;
