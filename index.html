@@ -173,7 +173,7 @@
         { id: 37, name: "第37题", codeUrl: "34-44/37.py", desc: "809*??=800*??+9*?? 其中??代表的两位数, 809*??为四位数，8*??的结果为两位数，9*??的结果为3位数。求??代表的两位数，用程序作出来。", needInput: false, gui: false },
         { id: 38, name: "第38题", codeUrl: "34-44/38.py", desc: "从键盘输入一些字符，逐个把它们写到磁盘文件上，直到输入一个 # 为止。", needInput: true, gui: false },
         { id: 39, name: "第39题", codeUrl: "34-44/39.py", desc: "从键盘输入一个字符串，将小写字母全部转换成大写字母，然后输出到一个磁盘文件\"test\"中保存。", needInput: true, gui: false },
-        { id: 40, name: "第40题", codeUrl: "34-44/40/40.py", desc: "有两个磁盘文件A和B,各存放一行字母,要求把这两个文件中的信息合并(按字母顺序排列), 输出到一个���文件C中。", needInput: false, gui: false, dataFiles: ["34-44/40/A.txt", "34-44/40/B.txt"] },
+        { id: 40, name: "第40题", codeUrl: "34-44/40/40.py", desc: "有两个磁盘文件A和B,各存放一行字母,要求把这两个文件中的信息合并(按字母顺序排列), 输出到一个新文件C中。", needInput: false, gui: false, dataFiles: ["34-44/40/A.txt", "34-44/40/B.txt"] },
         { id: 41, name: "第41题", codeUrl: "34-44/41.py", desc: "设计一标签文本在窗体内自由移动（tkinter）", needInput: false, gui: true },
         { id: 42, name: "第42题", codeUrl: "34-44/42.py", desc: "设计无标题栏窗体在屏上移动，并显示当前系统时间（每隔1秒变化一次）（tkinter）", needInput: false, gui: true },
         { id: 43, name: "第43题", codeUrl: "34-44/43.py", desc: "设计窗体，窗体内各对象能进行四则运算（tkinter）", needInput: false, gui: true },
@@ -256,7 +256,7 @@
         else statusEl.textContent += ' ⚠️ 部分失败，查看控制台';
     });
 
-    // 改进的"加载项目内数据文件"功能：收集所有 dataFiles，通过多种路径策略加载
+    // 改进的"加载项目内数据文件"功能
     document.getElementById('loadBundleBtn').addEventListener('click', async () => {
         const statusEl = document.getElementById('bundleStatus');
         statusEl.textContent = '正在加载项目内数据文件...';
@@ -278,39 +278,38 @@
         
         for (const fp of files) {
             let success = false;
-            const candidates = [];
+            console.log(`\n尝试加载: ${fp}`);
             
-            // 策略 1: 直接相对路径
-            candidates.push(fp);
+            // 获取当前页面的基础 URL
+            const currentPagePath = window.location.pathname;
+            const baseDir = currentPagePath.substring(0, currentPagePath.lastIndexOf('/') + 1);
+            const baseURL = window.location.origin + baseDir;
             
-            // 策略 2: 带 ./
-            candidates.push('./' + fp);
+            const candidates = [
+                fp,                              // 直接相对路径
+                './' + fp,                       // 带./的相对路径
+                '/' + fp,                        // 根目录
+                baseURL + fp,                    // 基于当前目录的完整URL
+            ];
             
-            // 策略 3: 当前域名 + 路径
-            if (location.protocol && location.protocol.startsWith('http')) {
-                // 策略 3a: 从根目录
-                candidates.push('/' + fp);
-                
-                // 策略 3b: 从当前路径���断的基础目录
-                const base = window.location.pathname.replace(/\/[^\/]*$/, '/');
-                candidates.push(base + fp);
-                
-                // 策略 3c: 完整 URL
-                candidates.push(window.location.origin + '/' + fp);
-            }
+            console.log(`候选URL列表:`, candidates);
             
             for (const url of candidates) {
                 try {
+                    console.log(`  -> 尝试: ${url}`);
                     const resp = await fetch(url);
                     if (resp && resp.ok) {
                         const content = await resp.text();
                         await writeFileToFS(fp, content);
-                        console.log(`✓ 加载成功: ${fp} (from ${url})`);
+                        console.log(`✓ 加载成功! (${url})`);
+                        console.log(`  内容长度: ${content.length} 字符`);
                         success = true;
                         break;
+                    } else {
+                        console.log(`  <- 响应状态: ${resp.status}`);
                     }
                 } catch (e) {
-                    console.debug(`  尝试失败 [${url}]:`, e.message);
+                    console.log(`  <- 错误: ${e.message}`);
                 }
             }
             
@@ -318,7 +317,7 @@
                 loadedCount++;
             } else {
                 failedFiles.push(fp);
-                console.warn(`✗ 无法加载: ${fp}`);
+                console.warn(`✗ 所有尝试都失败了: ${fp}`);
             }
         }
         
@@ -356,13 +355,11 @@
                     const stillMissing = [];
                     for (const fp of missing) {
                         let loaded = false;
-                        const candidates = [fp, './' + fp];
-                        if (location.protocol.startsWith('http')) {
-                            candidates.push('/' + fp);
-                            const base = window.location.pathname.replace(/\/[^\/]*$/, '/');
-                            candidates.push(base + fp);
-                            candidates.push(window.location.origin + '/' + fp);
-                        }
+                        const currentPagePath = window.location.pathname;
+                        const baseDir = currentPagePath.substring(0, currentPagePath.lastIndexOf('/') + 1);
+                        const baseURL = window.location.origin + baseDir;
+                        
+                        const candidates = [fp, './' + fp, '/' + fp, baseURL + fp];
                         for (const url of candidates) {
                             try {
                                 const resp = await fetch(url);
